@@ -269,7 +269,20 @@ public:
     void setOutputDataRate(odr_type_t odr);
     void setHighSolution(bool enable);
     bool available();
+
+    /**
+     * @brief Reads the X, Y and Z values from the accelerometer and converts them to Gs.
+     * 
+     * @param x 
+     * @param y 
+     * @param z 
+     */
     void getAcceleration(float *x, float *y, float *z);
+
+    /**
+     * @brief Reads the raw X, Y and Z values from the accelerometer.
+     */
+    void getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z);
     float getAccelerationX(void);
     float getAccelerationY(void);
     float getAccelerationZ(void);
@@ -278,6 +291,14 @@ public:
     void getIntStatus(uint8_t *flag);
 
     void setInterrupt(void);
+
+    /**
+     * @brief Enables the data ready (DRDY) interrupt.
+     * 
+     * Interrupt 1 will go high when fresh data is available and low during reading.
+     * 
+     */
+    void setDRDYInterrupt(void);
 
     void openTemp();
     void closeTemp();

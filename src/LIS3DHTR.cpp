@@ -232,6 +232,21 @@ void LIS3DHTR<T>::setOutputDataRate(odr_type_t odr)
 template <class T>
 void LIS3DHTR<T>::getAcceleration(float *x, float *y, float *z)
 {
+    int16_t rawX, rawY, rawZ;
+    getAccelerationRaw(&rawX, &rawY, &rawZ);
+
+    // Conversion of the result
+    // 16-bit signed result for X-Axis Acceleration Data of LIS3DHTR
+    *x = (float)rawX / accRange;
+    // 16-bit signed result for Y-Axis Acceleration Data of LIS3DHTR
+    *y = (float)rawY / accRange;
+    // 16-bit signed result for Z-Axis Acceleration Data of LIS3DHTR
+    *z = (float)rawZ / accRange;
+}
+
+template <class T>
+void LIS3DHTR<T>::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z)
+{
     // Read the Accelerometer
     uint8_t buf[8]={0};
 
@@ -240,11 +255,11 @@ void LIS3DHTR<T>::getAcceleration(float *x, float *y, float *z)
 
     // Conversion of the result
     // 16-bit signed result for X-Axis Acceleration Data of LIS3DHTR
-    *x = (float)((int16_t*)buf)[0] / accRange;
+    *x = ((int16_t*)buf)[0];
     // 16-bit signed result for Y-Axis Acceleration Data of LIS3DHTR
-    *y = (float)((int16_t*)buf)[1] / accRange;
+    *y = ((int16_t*)buf)[1];
     // 16-bit signed result for Z-Axis Acceleration Data of LIS3DHTR
-    *z = (float)((int16_t*)buf)[2] / accRange;
+    *z = ((int16_t*)buf)[2];
 }
 
 template <class T>
@@ -407,7 +422,7 @@ void LIS3DHTR<T>::readRegisterRegion(uint8_t *outputPointer, uint8_t reg, uint8_
         _wire_com->beginTransmission(devAddr);
         reg |= 0x80; //turn auto-increment bit on, bit 7 for I2C
         _wire_com->write(reg);
-        _wire_com->endTransmission();
+        _wire_com->endTransmission(false);
         _wire_com->requestFrom(devAddr, length);
 
         while ((_wire_com->available()) && (i < length)) // slave may send less than requested
@@ -507,6 +522,12 @@ void LIS3DHTR<T>::setInterrupt(void)
 
 	writeRegister(LIS3DHTR_REG_ACCEL_INT1_CFG,0x2a);        //trigger when ZHIE/YHIE/XHIE
 
+}
+
+template <class T>
+void LIS3DHTR<T>::setDRDYInterrupt(void)
+{
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG3, 0x10); // Enable ZYXDA
 }
 
 template <class T>
