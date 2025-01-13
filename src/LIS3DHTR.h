@@ -25,14 +25,13 @@
 */
 
 #if ARDUINO >= 100
-    #include "Arduino.h"
+#include "Arduino.h"
 #else
-    #include "WProgram.h"
+#include "WProgram.h"
 #endif
 
 #include <Wire.h>
 #include <SPI.h>
-
 
 #ifndef SEEED_LIS3DHTR_H
 #define SEEED_LIS3DHTR_H
@@ -52,12 +51,12 @@
     ACCELEROMETER REGISTERS
 **************************************************************************/
 #define LIS3DHTR_REG_ACCEL_STATUS (0x07)        // Status Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC1_L (0x28)    // 1-Axis Acceleration Data Low Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC1_H (0x29)    // 1-Axis Acceleration Data High Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC2_L (0x2A)    // 2-Axis Acceleration Data Low Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC2_H (0x2B)    // 2-Axis Acceleration Data High Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC3_L (0x2C)    // 3-Axis Acceleration Data Low Register
-#define LIS3DHTR_REG_ACCEL_OUT_ADC3_H (0x2D)    // 3-Axis Acceleration Data High Register
+#define LIS3DHTR_REG_OUT_ADC1_L (0x08)          // Auxiliary ADC Channel 1 Low Register
+#define LIS3DHTR_REG_OUT_ADC1_H (0x09)          // Auxiliary ADC Channel 1 High Register
+#define LIS3DHTR_REG_OUT_ADC2_L (0x0A)          // Auxiliary ADC Channel 2 Low Register
+#define LIS3DHTR_REG_OUT_ADC2_H (0x0B)          // Auxiliary ADC Channel 2 High Register
+#define LIS3DHTR_REG_OUT_ADC3_L (0x0C)          // Auxiliary ADC Channel 3 & Temperature Low Register
+#define LIS3DHTR_REG_OUT_ADC3_H (0x0D)          // Auxiliary ADC Channel 3 & Temperature High Register
 #define LIS3DHTR_REG_ACCEL_WHO_AM_I (0x0F)      // Device identification Register
 #define LIS3DHTR_REG_TEMP_CFG (0x1F)            // Temperature Sensor Register
 #define LIS3DHTR_REG_ACCEL_CTRL_REG1 (0x20)     // Accelerometer Control Register 1
@@ -129,67 +128,64 @@
 #define LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_DISABLE (0x00) // Acceleration X-Axis Disabled
 #define LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_ENABLE (0x01)  // Acceleration X-Axis Enabled
 
-
 /**************************************************************************
     ACCELEROMETER CONTROL REGISTER 2 DESCRIPTION
 **************************************************************************/
-#define LIS3DHTR_CTRL_REG2_HPM_MASK (0xC0)       // HPM
-#define LIS3DHTR_CTRL_REG2_HPM_NORMAL (0x00) // Normal mode
-#define LIS3DHTR_CTRL_REG2_HPM_REF (0x40) // Reference signal for filtering
-#define LIS3DHTR_CTRL_REG2_HPM_NORMAL1 (0x80) // Normal mode
+#define LIS3DHTR_CTRL_REG2_HPM_MASK (0xC0)      // HPM
+#define LIS3DHTR_CTRL_REG2_HPM_NORMAL (0x00)    // Normal mode
+#define LIS3DHTR_CTRL_REG2_HPM_REF (0x40)       // Reference signal for filtering
+#define LIS3DHTR_CTRL_REG2_HPM_NORMAL1 (0x80)   // Normal mode
 #define LIS3DHTR_CTRL_REG2_HPM_AUTORESET (0xC0) // Autoreset on interrupt event
 
 #define LIS3DHTR_CTRL_REG2_HPCF_MASK (0x30) // HPCF
 #define LIS3DHTR_CTRL_REG2_HPCF_NONE (0x00) // NONE
 
-#define LIS3DHTR_CTRL_REG2_FDS_MASK (0x08) // Filtered data selection
+#define LIS3DHTR_CTRL_REG2_FDS_MASK (0x08)    // Filtered data selection
 #define LIS3DHTR_CTRL_REG2_FDS_DISABLE (0x00) // filter disable
-#define LIS3DHTR_CTRL_REG2_FDS_ENABLE (0x08) // filter enable
+#define LIS3DHTR_CTRL_REG2_FDS_ENABLE (0x08)  // filter enable
 
-#define LIS3DHTR_CTRL_REG2_HPCLICK_MASK (0x04) // High-pass filter enabled for CLICK function.
+#define LIS3DHTR_CTRL_REG2_HPCLICK_MASK (0x04)    // High-pass filter enabled for CLICK function.
 #define LIS3DHTR_CTRL_REG2_HPCLICK_DISABLE (0x00) // filter disable
-#define LIS3DHTR_CTRL_REG2_HPCLICK_ENABLE (0x04) // filter enable
+#define LIS3DHTR_CTRL_REG2_HPCLICK_ENABLE (0x04)  // filter enable
 
-#define LIS3DHTR_CTRL_REG2_HP_IA2_MASK (0x02) // High-pass filter enabled for AOI function on interrupt 2
+#define LIS3DHTR_CTRL_REG2_HP_IA2_MASK (0x02)    // High-pass filter enabled for AOI function on interrupt 2
 #define LIS3DHTR_CTRL_REG2_HP_IA2_DISABLE (0x00) // filter disable
-#define LIS3DHTR_CTRL_REG2_HP_IA2_ENABLE (0x02) 
+#define LIS3DHTR_CTRL_REG2_HP_IA2_ENABLE (0x02)
 
-#define LIS3DHTR_CTRL_REG2_HP_IA1_MASK (0x01) // High-pass filter enabled for AOI function on interrupt 1
+#define LIS3DHTR_CTRL_REG2_HP_IA1_MASK (0x01)    // High-pass filter enabled for AOI function on interrupt 1
 #define LIS3DHTR_CTRL_REG2_HP_IA1_DISABLE (0x00) // filter disable
 #define LIS3DHTR_CTRL_REG2_HP_IA1_ENABLE (0x01)  // filter enable
-
 
 /**************************************************************************
     ACCELEROMETER CONTROL REGISTER 3 DESCRIPTION
 **************************************************************************/
-#define LIS3DHTR_CTRL_REG3_CLICK_MASK (0x80)       // Click interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_CLICK_MASK (0x80)    // Click interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_CLICK_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_CLICK_ENABLE (0x80)  // enable
 
-#define LIS3DHTR_CTRL_REG3_IA1_MASK (0x40)       //  IA1 interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_IA1_MASK (0x40)    //  IA1 interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_IA1_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_IA1_ENABLE (0x40)  // enable
 
-#define LIS3DHTR_CTRL_REG3_IA2_MASK (0x20)       //  IA2 interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_IA2_MASK (0x20)    //  IA2 interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_IA2_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_IA2_ENABLE (0x20)  // enable
 
-#define LIS3DHTR_CTRL_REG3_ZXYDA_MASK (0x10)       // ZYXDA interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_ZXYDA_MASK (0x10)    // ZYXDA interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_ZXYDA_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_ZXYDA_ENABLE (0x10)  // enable
 
-#define LIS3DHTR_CTRL_REG3_321DA_MASK (0x08)       //  321DA interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_321DA_MASK (0x08)    //  321DA interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_321DA_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_321DA_ENABLE (0x08)  // enable
 
-#define LIS3DHTR_CTRL_REG3_WTM_MASK (0x04)       //  FIFO watermark interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_WTM_MASK (0x04)    //  FIFO watermark interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_WTM_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_WTM_ENABLE (0x04)  // enable
 
-#define LIS3DHTR_CTRL_REG3_OVERRUN_MASK (0x02)       //  FIFO overrun interrupt on INT1
+#define LIS3DHTR_CTRL_REG3_OVERRUN_MASK (0x02)    //  FIFO overrun interrupt on INT1
 #define LIS3DHTR_CTRL_REG3_OVERRUN_DISABLE (0x00) // disable
 #define LIS3DHTR_CTRL_REG3_OVERRUN_ENABLE (0x02)  // enable
-
 
 /**************************************************************************
     ACCELEROMETER CONTROL REGISTER 4 DESCRIPTION
@@ -221,7 +217,7 @@
 #define LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_4WIRE (0x00) // 4-Wire Interface
 #define LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_3WIRE (0x01) // 3-Wire Interface
 
-#define LIS3DHTR_REG_ACCEL_STATUS2_UPDATE_MASK (0x08)   // Has New Data Flag Mask
+#define LIS3DHTR_REG_ACCEL_STATUS2_UPDATE_MASK (0x08) // Has New Data Flag Mask
 
 enum power_type_t // power mode
 {
@@ -257,25 +253,67 @@ class LIS3DHTR
 public:
     LIS3DHTR();
 
+    /**
+     * @brief Checks if the accelerometer is connected and communicating correctly.
+     */
     bool isConnection(void);
 
-    void begin(SPIClass &comm = SPI, uint8_t sspin = SS); //init
-    void begin(TwoWire &comm = Wire, uint8_t address = LIS3DHTR_DEFAULT_ADDRESS); //init
+    /**
+     * @brief Initialises the accelerometer with an SPI connection.
+     *
+     * @param comm the SPI bus to use.
+     * @param sspin the chip select pin to use.
+     */
+    void begin(SPIClass &comm = SPI, uint8_t sspin = SS);
+
+    /**
+     * @brief Initialises the accelerometer with an I2C connection.
+     *
+     * @param comm the I2C bus to use (some microcontrollers have multiple busses).
+     * @param address the address of the accelerometer on the bus (either
+     *                `LIS3DHTR_DEFAULT_ADDRESS` (0x18) or `LIS3DHTR_ADDRESS_UPDATED` (0x19)).
+     */
+    void begin(TwoWire &comm = Wire, uint8_t address = LIS3DHTR_DEFAULT_ADDRESS);
+
+    /**
+     * @brief Initialises the accelerometer with the default I2C bus connection.
+     *
+     * @param address the address of the accelerometer on the bus (either
+     *                `LIS3DHTR_DEFAULT_ADDRESS` (0x18) or `LIS3DHTR_ADDRESS_UPDATED` (0x19)).
+     */
     void begin(uint8_t address) { begin(Wire, address); };
 
-
+    /**
+     * @brief Sets the power mode of the accelerometer. This changes the number of bits used for each channel. L
+     *
+     * @param mode
+     */
     void setPowerMode(power_type_t mode);
+
+    /**
+     * @brief Sets the full scale range of the accelerometer.
+     */
     void setFullScaleRange(scale_type_t range);
+
+    /**
+     * @brief Sets the output data rate.
+     *
+     * @param odr the output data rate to request.
+     */
     void setOutputDataRate(odr_type_t odr);
     void setHighSolution(bool enable);
+
+    /**
+     * @brief Checks if new readings are available.
+     */
     bool available();
 
     /**
      * @brief Reads the X, Y and Z values from the accelerometer and converts them to Gs.
-     * 
-     * @param x 
-     * @param y 
-     * @param z 
+     *
+     * @param x the X acceleration in G.
+     * @param y the Y acceleration in G.
+     * @param z the Z acceleration in G.
      */
     void getAcceleration(float *x, float *y, float *z);
 
@@ -283,9 +321,28 @@ public:
      * @brief Reads the raw X, Y and Z values from the accelerometer.
      */
     void getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z);
+
+    /**
+     * @brief Reads only the X axis acceleration.
+     *
+     * @return float the acceleration in Gs.
+     */
     float getAccelerationX(void);
+
+    /**
+     * @brief Reads only the Y axis acceleration.
+     *
+     * @return float the acceleration in Gs.
+     */
     float getAccelerationY(void);
+
+    /**
+     * @brief Reads only the Z axis acceleration.
+     *
+     * @return float the acceleration in Gs.
+     */
     float getAccelerationZ(void);
+
     void click(uint8_t c, uint8_t click_thresh, uint8_t limit = 10, uint8_t latency = 20, uint8_t window = 255);
 
     void getIntStatus(uint8_t *flag);
@@ -294,32 +351,110 @@ public:
 
     /**
      * @brief Enables the data ready (DRDY) interrupt.
-     * 
+     *
      * Interrupt 1 will go high when fresh data is available and low during reading.
-     * 
+     *
      */
     void setDRDYInterrupt(void);
 
+    /**
+     * @brief Enables the temperature sensor.
+     *
+     */
     void openTemp();
+
+    /**
+     * @brief Disables the temperature sensor, but leaves the
+     * ADCs operational.
+     *
+     */
     void closeTemp();
 
+    /**
+     * @brief Reads the channel 1 auxilliary ADC.
+     */
     uint16_t readbitADC1(void);
+
+    /**
+     * @brief Reads the channel 2 auxilliary ADC.
+     */
     uint16_t readbitADC2(void);
+
+    /**
+     * @brief Reads the channel 3 auxilliary ADC.
+     *
+     * If the temperature sensor is enabled, this could be reading the temperatue instead of
+     * whatever is connected to the channel 3 pin. In this case, use `getTemperature()` to obtain
+     * a nicely scaled output.
+     */
     uint16_t readbitADC3(void);
 
+    /**
+     * @brief Obtains the temperature.
+     *
+     * Call `openTemp()` to enable temperature readign before calling this method.
+     *
+     * @return int16_t temperature estimate in degrees C.
+     */
     int16_t getTemperature(void);
 
+    /**
+     * @brief Reads and returns the device ID. This should always be 0x33.
+     */
     uint8_t getDeviceID(void);
 
     void reset(void);
     operator bool();
 
 private:
-    void read(uint8_t reg, uint8_t *buf, uint16_t len);
-    void readRegisterRegion(uint8_t *outputPointer, uint8_t offset, uint8_t length);
+    /**
+     * @brief Initialises the registers to something useful.
+     *
+     */
+    void initRegisters();
+
+    /**
+     * @brief Reads a region of memory from the accelerometer.
+     *
+     * @param outputPointer pointer to a byte array to place the data in.
+     * @param reg the address of the first register to read.
+     * @param length the number of bytes to read. Make sure this is smaller than the length of the
+     *               byte array at `outputPointer`; a buffer overflow will occur otherwise.
+     */
+    void readRegisterRegion(uint8_t *outputPointer, uint8_t reg, uint8_t length);
+
+    /**
+     * @brief Writes to a register on the accelerometer using the configurred connection method.
+     *
+     * @param reg the address of the register.
+     * @param val the value to write.
+     */
     void writeRegister(uint8_t reg, uint8_t val);
+
+    /**
+     * @brief Reads from a register on the accelerometer using the configurred connection method.
+     *
+     * @param reg the address of the register.
+     * @return uint8_t the contents of the register.
+     */
     uint8_t readRegister(uint8_t reg);
+
+    /**
+     * @brief Reads two registers from the accelerometer and combines these into a 16 bit integer.
+     *
+     * @param reg the address of the register.
+     * @return uint16_t ther contents of the register.
+     */
     uint16_t readRegisterInt16(uint8_t reg);
+
+    /**
+     * @brief Reads the registers for a given ADC and processes it into the expected number format.
+     *
+     * @param startReg the low register of the ADC channel.
+     * @return uint16_t the ADC value.
+     */
+    uint16_t readbitADC(uint8_t startReg);
+
     uint8_t devAddr;
     int16_t accRange;
     uint8_t commInterface;

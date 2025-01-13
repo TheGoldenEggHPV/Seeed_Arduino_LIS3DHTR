@@ -1,10 +1,10 @@
-/*    
+/*
  * A library for Grove - 3-Axis Digital Accelerometer ±2g to 16g Ultra-low Power(LIS3DHTR)
- *   
- * Copyright (c) 2019 seeed technology co., ltd.  
- * Author      : Hongtai Liu (lht856@foxmail.com)  
+ *
+ * Copyright (c) 2019 seeed technology co., ltd.
+ * Author      : Hongtai Liu (lht856@foxmail.com)
  * Create Time : July 2019
- * Change Log  : 
+ * Change Log  :
  *
  * The MIT License (MIT)
  *
@@ -14,10 +14,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software istm
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,7 +32,6 @@ template <class T>
 
 LIS3DHTR<T>::LIS3DHTR()
 {
-    
 }
 
 template <class T>
@@ -55,32 +54,7 @@ void LIS3DHTR<T>::begin(SPIClass &comm, uint8_t sspin)
 
     delay(200);
 
-    uint8_t config5 = LIS3DHTR_REG_TEMP_ADC_PD_ENABLED |
-                      LIS3DHTR_REG_TEMP_TEMP_EN_DISABLED;
-
-    writeRegister(LIS3DHTR_REG_TEMP_CFG, config5);
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    uint8_t config1 = LIS3DHTR_REG_ACCEL_CTRL_REG1_LPEN_NORMAL | // Normal Mode
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AZEN_ENABLE | // Acceleration Z-Axis Enabled
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AYEN_ENABLE | // Acceleration Y-Axis Enabled
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_ENABLE;
-
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG1, config1);
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    uint8_t config4 = LIS3DHTR_REG_ACCEL_CTRL_REG4_BDU_NOTUPDATED | // Continuous Update
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_BLE_LSB |        // Data LSB @ lower address
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_DISABLE |      // High Resolution Disable
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_ST_NORMAL |      // Normal Mode
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_4WIRE;       // 4-Wire Interface
-
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG4, config4);
-
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    setFullScaleRange(LIS3DHTR_RANGE_16G);
-    setOutputDataRate(LIS3DHTR_DATARATE_400HZ);
+    initRegisters();
 }
 
 template <class T>
@@ -91,36 +65,10 @@ void LIS3DHTR<T>::begin(TwoWire &wire, uint8_t address)
     _spi_com = NULL;
     devAddr = address;
 
-    uint8_t config5 = LIS3DHTR_REG_TEMP_ADC_PD_ENABLED |
-                      LIS3DHTR_REG_TEMP_TEMP_EN_DISABLED;
-
-    writeRegister(LIS3DHTR_REG_TEMP_CFG, config5);
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    uint8_t config1 = LIS3DHTR_REG_ACCEL_CTRL_REG1_LPEN_NORMAL | // Normal Mode
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AZEN_ENABLE | // Acceleration Z-Axis Enabled
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AYEN_ENABLE | // Acceleration Y-Axis Enabled
-                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_ENABLE;
-
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG1, config1);
-
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    uint8_t config4 = LIS3DHTR_REG_ACCEL_CTRL_REG4_BDU_NOTUPDATED | // Continuous Update
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_BLE_LSB |        // Data LSB @ lower address
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_DISABLE |     // High Resolution Disable
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_ST_NORMAL |      // Normal Mode
-                      LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_4WIRE;       // 4-Wire Interface
-
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG4, config4);
-
-    delay(LIS3DHTR_CONVERSIONDELAY);
-
-    setFullScaleRange(LIS3DHTR_RANGE_16G);
-    setOutputDataRate(LIS3DHTR_DATARATE_400HZ);
+    initRegisters();
 }
 
-template<class T>
+template <class T>
 bool LIS3DHTR<T>::available()
 {
     uint8_t status = 0;
@@ -152,7 +100,8 @@ void LIS3DHTR<T>::closeTemp()
 template <class T>
 int16_t LIS3DHTR<T>::getTemperature(void)
 {
-    int16_t result = ((int16_t)readRegisterInt16(0x0c)) / 256;
+    // Datasheet says 1 digit per degree C in 8 bit resolution.
+    int16_t result = ((int16_t)readRegisterInt16(LIS3DHTR_REG_OUT_ADC3_L)) / 256;
     result += 25;
     return result;
 }
@@ -248,18 +197,18 @@ template <class T>
 void LIS3DHTR<T>::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z)
 {
     // Read the Accelerometer
-    uint8_t buf[8]={0};
+    uint8_t buf[8] = {0};
 
     // Read the Data
-    readRegisterRegion(buf,LIS3DHTR_REG_ACCEL_OUT_X_L,6);
+    readRegisterRegion(buf, LIS3DHTR_REG_ACCEL_OUT_X_L, 6);
 
     // Conversion of the result
     // 16-bit signed result for X-Axis Acceleration Data of LIS3DHTR
-    *x = ((int16_t*)buf)[0];
+    *x = ((int16_t *)buf)[0];
     // 16-bit signed result for Y-Axis Acceleration Data of LIS3DHTR
-    *y = ((int16_t*)buf)[1];
+    *y = ((int16_t *)buf)[1];
     // 16-bit signed result for Z-Axis Acceleration Data of LIS3DHTR
-    *z = ((int16_t*)buf)[2];
+    *z = ((int16_t *)buf)[2];
 }
 
 template <class T>
@@ -322,54 +271,28 @@ void LIS3DHTR<T>::setHighSolution(bool enable)
 {
     uint8_t data = 0;
     data = readRegister(LIS3DHTR_REG_ACCEL_CTRL_REG4);
-   
-    data = enable? data | LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_ENABLE : data & ~LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_ENABLE;
-    
+
+    data = enable ? data | LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_ENABLE : data & ~LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_ENABLE;
+
     writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG4, data);
-    return; 
+    return;
 }
 
 template <class T>
 uint16_t LIS3DHTR<T>::readbitADC1(void)
 {
-    uint8_t adc1_l, adc1_h;
-    int16_t intTemp;
-    uint16_t uintTemp;
-    adc1_l = readRegister(0x08);
-    adc1_h = readRegister(0x09);
-
-    intTemp = (int16_t)(adc1_h << 8) | adc1_l;
-    intTemp = 0 - intTemp;
-    uintTemp = intTemp + 32768;
-    return uintTemp >> 6;
+    return readbitADC(LIS3DHTR_REG_OUT_ADC1_L);
 }
 template <class T>
 uint16_t LIS3DHTR<T>::readbitADC2(void)
 {
-    uint8_t adc2_l, adc2_h;
-    int16_t intTemp;
-    uint16_t uintTemp;
-    adc2_l = readRegister(0x0A);
-    adc2_h = readRegister(0x0B);
-    intTemp = (int16_t)(adc2_h << 8) | adc2_l;
-    intTemp = 0 - intTemp;
-    uintTemp = intTemp + 32768;
-    return uintTemp >> 6;
+    return readbitADC(LIS3DHTR_REG_OUT_ADC2_L);
 }
 
 template <class T>
 uint16_t LIS3DHTR<T>::readbitADC3(void)
 {
-    uint8_t adc3_l, adc3_h;
-    int16_t intTemp;
-    uint16_t uintTemp;
-    adc3_l = readRegister(0x0C);
-    adc3_h = readRegister(0x0D);
-
-    intTemp = (int16_t)(adc3_h << 8) | adc3_l;
-    intTemp = 0 - intTemp;
-    uintTemp = intTemp + 32768;
-    return uintTemp >> 6;
+    return readbitADC(LIS3DHTR_REG_OUT_ADC3_L);
 }
 
 template <class T>
@@ -394,10 +317,41 @@ void LIS3DHTR<T>::writeRegister(uint8_t reg, uint8_t val)
 }
 
 template <class T>
+void LIS3DHTR<T>::initRegisters()
+{
+    uint8_t config5 = LIS3DHTR_REG_TEMP_ADC_PD_ENABLED |
+                      LIS3DHTR_REG_TEMP_TEMP_EN_DISABLED;
+
+    writeRegister(LIS3DHTR_REG_TEMP_CFG, config5);
+    delay(LIS3DHTR_CONVERSIONDELAY);
+
+    uint8_t config1 = LIS3DHTR_REG_ACCEL_CTRL_REG1_LPEN_NORMAL | // Normal Mode
+                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AZEN_ENABLE | // Acceleration Z-Axis Enabled
+                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AYEN_ENABLE | // Acceleration Y-Axis Enabled
+                      LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_ENABLE;
+
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG1, config1);
+    delay(LIS3DHTR_CONVERSIONDELAY);
+
+    uint8_t config4 = LIS3DHTR_REG_ACCEL_CTRL_REG4_BDU_NOTUPDATED | // Continuous Update
+                      LIS3DHTR_REG_ACCEL_CTRL_REG4_BLE_LSB |        // Data LSB @ lower address
+                      LIS3DHTR_REG_ACCEL_CTRL_REG4_HS_DISABLE |     // High Resolution Disable
+                      LIS3DHTR_REG_ACCEL_CTRL_REG4_ST_NORMAL |      // Normal Mode
+                      LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_4WIRE;       // 4-Wire Interface
+
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG4, config4);
+
+    delay(LIS3DHTR_CONVERSIONDELAY);
+
+    setFullScaleRange(LIS3DHTR_RANGE_16G);
+    setOutputDataRate(LIS3DHTR_DATARATE_400HZ);
+}
+
+template <class T>
 void LIS3DHTR<T>::readRegisterRegion(uint8_t *outputPointer, uint8_t reg, uint8_t length)
 {
 
-    //define pointer that will point to the external space
+    // define pointer that will point to the external space
     uint8_t i = 0;
     uint8_t c = 0;
 
@@ -405,7 +359,7 @@ void LIS3DHTR<T>::readRegisterRegion(uint8_t *outputPointer, uint8_t reg, uint8_
     {
         _spi_com->beginTransaction(_settings);
         digitalWrite(chipSelectPin, LOW);
-        _spi_com->transfer(reg | 0x80 | 0x40); //Ored with "read request" bit and "auto increment" bit
+        _spi_com->transfer(reg | 0x80 | 0x40); // Ored with "read request" bit and "auto increment" bit
         while (i < length)                     // slave may send less than requested
         {
             c = _spi_com->transfer(0x00); // receive a byte as character
@@ -414,13 +368,13 @@ void LIS3DHTR<T>::readRegisterRegion(uint8_t *outputPointer, uint8_t reg, uint8_
             i++;
         }
         digitalWrite(chipSelectPin, HIGH);
-        _spi_com->endTransaction();        
+        _spi_com->endTransaction();
     }
     else
     {
 
         _wire_com->beginTransmission(devAddr);
-        reg |= 0x80; //turn auto-increment bit on, bit 7 for I2C
+        reg |= 0x80; // turn auto-increment bit on, bit 7 for I2C
         _wire_com->write(reg);
         _wire_com->endTransmission(false);
         _wire_com->requestFrom(devAddr, length);
@@ -444,6 +398,15 @@ uint16_t LIS3DHTR<T>::readRegisterInt16(uint8_t reg)
     uint16_t output = myBuffer[0] | uint16_t(myBuffer[1] << 8);
 
     return output;
+}
+
+template <class T>
+uint16_t LIS3DHTR<T>::readbitADC(uint8_t startReg)
+{
+    int16_t signedADC = (int16_t)readRegisterInt16(startReg);
+    signedADC = 0 - signedADC;
+    uint16_t unsignedADC = signedADC + 32768;
+    return unsignedADC >> 6;
 }
 
 template <class T>
@@ -500,28 +463,27 @@ void LIS3DHTR<T>::setInterrupt(void)
                       LIS3DHTR_REG_ACCEL_CTRL_REG1_AZEN_ENABLE | // Acceleration Z-Axis Enabled
                       LIS3DHTR_REG_ACCEL_CTRL_REG1_AYEN_ENABLE | // Acceleration Y-Axis Enabled
                       LIS3DHTR_REG_ACCEL_CTRL_REG1_AXEN_ENABLE;
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG1, config1);  // (50 Hz),  X/Y/Z-axis enable
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG1, config1); // (50 Hz),  X/Y/Z-axis enable
 
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG2, 0x00);  // 
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG2, 0x00); //
 
-    uint8_t config3 = LIS3DHTR_CTRL_REG3_IA1_ENABLE; 
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG3, config3);  // IA1 interrupt
+    uint8_t config3 = LIS3DHTR_CTRL_REG3_IA1_ENABLE;
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG3, config3); // IA1 interrupt
 
     setFullScaleRange(LIS3DHTR_RANGE_8G);
 
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, 0x00);  // Latch interrupt request 
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, 0x00); // Latch interrupt request
 
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG6, 0x42);  // IA1, active-low  Enable interrupt 1 function on INT2 pin
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG6, 0x42); // IA1, active-low  Enable interrupt 1 function on INT2 pin
 
-	writeRegister(LIS3DHTR_REG_ACCEL_INT1_THS,0x50);    //set Threshold，2g =>16mg/LSB，4g => 32mg/LSB，8g => 62mg/LSB，16g => 186mg/LSB
+    writeRegister(LIS3DHTR_REG_ACCEL_INT1_THS, 0x50); // set Threshold，2g =>16mg/LSB，4g => 32mg/LSB，8g => 62mg/LSB，16g => 186mg/LSB
 
-	writeRegister(LIS3DHTR_REG_ACCEL_INT1_DURATION,0); 
+    writeRegister(LIS3DHTR_REG_ACCEL_INT1_DURATION, 0);
 
-    data = readRegister(LIS3DHTR_REG_ACCEL_INT1_SRC);     //clear interrupt flag
-    (void)data; // UNUSED
+    data = readRegister(LIS3DHTR_REG_ACCEL_INT1_SRC); // clear interrupt flag
+    (void)data;                                       // UNUSED
 
-	writeRegister(LIS3DHTR_REG_ACCEL_INT1_CFG,0x2a);        //trigger when ZHIE/YHIE/XHIE
-
+    writeRegister(LIS3DHTR_REG_ACCEL_INT1_CFG, 0x2a); // trigger when ZHIE/YHIE/XHIE
 }
 
 template <class T>
