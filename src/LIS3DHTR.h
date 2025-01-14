@@ -217,7 +217,60 @@
 #define LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_4WIRE (0x00) // 4-Wire Interface
 #define LIS3DHTR_REG_ACCEL_CTRL_REG4_SIM_3WIRE (0x01) // 3-Wire Interface
 
+/**************************************************************************
+    ACCELEROMETER CONTROL REGISTER 5 DESCRIPTION
+**************************************************************************/
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_REBOOT_MASK (0x80)    // Reboot / reset the device.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_REBOOT_DISABLE (0x00) // Don't reboot the device.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_REBOOT_ENABLE (0x80)  // Reboot / reset the device.
+
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_FIFO_MASK (0x40)    // FIFO queue enable.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_FIFO_DISABLE (0x00) // Disable the FIFO queue (default)
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_FIFO_ENABLE (0x40)  // Enable the FIFO queue.
+
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT1_MASK (0x08)    // Latch interrupts on pin 1.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT1_DISABLE (0x00) // No latch
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT1_ENABLE (0x08)  // Latch until the INT1_SRC register is read.
+
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT1_MASK (0x04)    // 4D enable (depends on 6D bit on INT1_CFG).
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT1_DISABLE (0x00) // Disable 4D interrupts on this pin.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT1_ENABLE (0x04)  // Enable 4D interrupts on this pin.
+
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT2_MASK (0x02)    // Latch interrupts on pin 2.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT2_DISABLE (0x00) // No latch
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_LIR_INT2_ENABLE (0x02)  // Latch until the INT2_SRC register is read.
+
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT2_MASK (0x01)    // 4D enable (depends on 6D bit on INT2_CFG).
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT2_DISABLE (0x00) // Disable 4D interrupts on this pin.
+#define LIS3DHTR_REG_ACCEL_CTRL_REG5_D4D_INT2_ENABLE (0x01)  // Enable 4D interrupts on this pin.
+
+/**************************************************************************
+    ACCELEROMETER STATUS 2 REGISTER DESCRIPTION
+**************************************************************************/
 #define LIS3DHTR_REG_ACCEL_STATUS2_UPDATE_MASK (0x08) // Has New Data Flag Mask
+
+/**************************************************************************
+    ACCELEROMETER FIFO CONTROL REGISTER DESCRIPTION
+**************************************************************************/
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_MASK (0xC0)        // FIFO mode selection.
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_BYPASS (0x00)      // Bypass the FIFO (normal, default).
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_FIFO (0x40)        // FIFO mode.
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_STREAM (0x80)      // Stream mode.
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_STREAM_FIFO (0xC0) // Stream to FIFO mode.
+
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_TRIGGER (0x20)      // Trigger selection.
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_TRIGGER_INT1 (0x00) // Trigger on int 1.
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_TRIGGER_INT2 (0x20) // Trigger on int 2.
+
+#define LIS3DHTR_REG_ACCEL_FIFO_CTRL_WATERMARK_MASK (0x1F) // High watermark mask.
+
+/**************************************************************************
+    ACCELEROMETER FIFO INTERRUPT SOURCE REGISTER DESCRIPTION
+**************************************************************************/
+#define LIS3DHTR_REG_ACCEL_FIFO_SRC_WTM_MASK (0x80)            // Bit to indicate watermark level exceeded.
+#define LIS3DHTR_REG_ACCEL_FIFO_SRC_OVERRUN_MASK (0x40)        // Bit set when buffer is full.
+#define LIS3DHTR_REG_ACCEL_FIFO_SRC_EMPTY_MASK (0x20)          // Bit set when all samples have been read.
+#define LIS3DHTR_REG_ACCEL_FIFO_SRC_UNREAD_SAMPLES_MASK (0x1F) // Number of unread samples
 
 enum power_type_t // power mode
 {
@@ -246,6 +299,22 @@ enum odr_type_t // output data rate
     LIS3DHTR_DATARATE_1_6KH = LIS3DHTR_REG_ACCEL_CTRL_REG1_AODR_1_6K,
     LIS3DHTR_DATARATE_5KHZ = LIS3DHTR_REG_ACCEL_CTRL_REG1_AODR_5K
 };
+
+/**
+ * @brief  Struct to put raw data in.
+ *
+ * The packed attribute makes sure extra padding isn't added so we can cast directly from a byte
+ * array. This may have issues on some systems?
+ *
+ */
+struct values_type_t
+{
+    int16_t x;
+    int16_t y;
+    int16_t z;
+};
+
+const int gsdggf = sizeof(values_type_t);
 
 template <class T>
 class LIS3DHTR
@@ -301,6 +370,12 @@ public:
      * @param odr the output data rate to request.
      */
     void setOutputDataRate(odr_type_t odr);
+
+    /**
+     * @brief Enable or disable high resolution output mode.
+     *
+     * @param enable whether to enable the mode.
+     */
     void setHighSolution(bool enable);
 
     /**
@@ -319,8 +394,10 @@ public:
 
     /**
      * @brief Reads the raw X, Y and Z values from the accelerometer.
+     *
+     * @param raw struct to place the X, Y and Z values in.
      */
-    void getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z);
+    void getAccelerationRaw(values_type_t &raw);
 
     /**
      * @brief Reads only the X axis acceleration.
@@ -345,6 +422,21 @@ public:
 
     void click(uint8_t c, uint8_t click_thresh, uint8_t limit = 10, uint8_t latency = 20, uint8_t window = 255);
 
+    /**
+     * @brief Reads the interrupt status register in the accelerometer.
+     *
+     * See the INT1_SRC (31h) in the datasheet. As a summary:
+     *
+     * - Bit 6: Interrupt active.
+     * - Bit 5: Z high.
+     * - Bit 4: Z low.
+     * - Bit 3: Y high.
+     * - Bit 2: Y low.
+     * - Bit 1: X high.
+     * - Bit 0: X low.
+     *
+     * @param flag pointer to a byte to place the value in.
+     */
     void getIntStatus(uint8_t *flag);
 
     void setInterrupt(void);
@@ -403,7 +495,46 @@ public:
      */
     uint8_t getDeviceID(void);
 
+    /**
+     * @brief Resets the registers back to their defaults on first boot.
+     *
+     * Note that the `begin()` method initialises them to something different than the default.
+     *
+     */
     void reset(void);
+
+    /**
+     * @brief Instructs the accelerometer to use its internal FIFO queue in stream mode.
+     *
+     * In stream mode, new values are placed on the end of the 32 level queue. When a given number
+     * of values have been accrued (the high watermark + 1), an interrupt on pin 1 will be created.
+     * This signals to the microcontroller that it can access data as a batch.
+     *
+     * One application of stream mode is high frequency sampling and removing the need for an
+     * interrupt every single sample.
+     *
+     * See section "5.1.3 Stream mode" in the manual for more details.
+     *
+     * @param highWatermark when there are more samples in the FIFO buffer than this, an interrupt
+     *                      will occur. When the number of samples drops to less than or equal this
+     *                      value due to data being read, the interrupt will be cleared.
+     */
+    void setupFIFOStream(const uint8_t highWatermark);
+
+    /**
+     * @brief Reads raw data from the FIFO buffer.
+     *
+     * @param values array of structs to place the records in.
+     * @param valuesToRead the number of records (X, Y and Z tuples) to read. Make sure this is the
+     *                     same size or smaller than the length of values.
+     */
+    void readFIFORaw(values_type_t *values, uint8_t valuesToRead);
+
+    /**
+     * @brief Obtains the number of unread samples in the FIFO buffer.
+     */
+    uint8_t unreadFIFOSamples(void);
+
     operator bool();
 
 private:
@@ -411,7 +542,7 @@ private:
      * @brief Initialises the registers to something useful.
      *
      */
-    void initRegisters();
+    void initRegisters(void);
 
     /**
      * @brief Reads a region of memory from the accelerometer.
@@ -453,7 +584,7 @@ private:
      * @param startReg the low register of the ADC channel.
      * @return uint16_t the ADC value.
      */
-    uint16_t readbitADC(uint8_t startReg);
+    uint16_t readbitADC(const uint8_t startReg);
 
     uint8_t devAddr;
     int16_t accRange;

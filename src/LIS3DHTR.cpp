@@ -181,34 +181,23 @@ void LIS3DHTR<T>::setOutputDataRate(odr_type_t odr)
 template <class T>
 void LIS3DHTR<T>::getAcceleration(float *x, float *y, float *z)
 {
-    int16_t rawX, rawY, rawZ;
-    getAccelerationRaw(&rawX, &rawY, &rawZ);
+    values_type_t raw;
+    getAccelerationRaw(raw);
 
     // Conversion of the result
     // 16-bit signed result for X-Axis Acceleration Data of LIS3DHTR
-    *x = (float)rawX / accRange;
+    *x = (float)raw.x / accRange;
     // 16-bit signed result for Y-Axis Acceleration Data of LIS3DHTR
-    *y = (float)rawY / accRange;
+    *y = (float)raw.y / accRange;
     // 16-bit signed result for Z-Axis Acceleration Data of LIS3DHTR
-    *z = (float)rawZ / accRange;
+    *z = (float)raw.z / accRange;
 }
 
 template <class T>
-void LIS3DHTR<T>::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z)
+void LIS3DHTR<T>::getAccelerationRaw(values_type_t &raw)
 {
-    // Read the Accelerometer
-    uint8_t buf[8] = {0};
-
     // Read the Data
-    readRegisterRegion(buf, LIS3DHTR_REG_ACCEL_OUT_X_L, 6);
-
-    // Conversion of the result
-    // 16-bit signed result for X-Axis Acceleration Data of LIS3DHTR
-    *x = ((int16_t *)buf)[0];
-    // 16-bit signed result for Y-Axis Acceleration Data of LIS3DHTR
-    *y = ((int16_t *)buf)[1];
-    // 16-bit signed result for Z-Axis Acceleration Data of LIS3DHTR
-    *z = ((int16_t *)buf)[2];
+    readRegisterRegion((uint8_t *)&raw, LIS3DHTR_REG_ACCEL_OUT_X_L, 6);
 }
 
 template <class T>
@@ -317,7 +306,7 @@ void LIS3DHTR<T>::writeRegister(uint8_t reg, uint8_t val)
 }
 
 template <class T>
-void LIS3DHTR<T>::initRegisters()
+void LIS3DHTR<T>::initRegisters(void)
 {
     uint8_t config5 = LIS3DHTR_REG_TEMP_ADC_PD_ENABLED |
                       LIS3DHTR_REG_TEMP_TEMP_EN_DISABLED;
@@ -401,7 +390,7 @@ uint16_t LIS3DHTR<T>::readRegisterInt16(uint8_t reg)
 }
 
 template <class T>
-uint16_t LIS3DHTR<T>::readbitADC(uint8_t startReg)
+uint16_t LIS3DHTR<T>::readbitADC(const uint8_t startReg)
 {
     int16_t signedADC = (int16_t)readRegisterInt16(startReg);
     signedADC = 0 - signedADC;
@@ -489,7 +478,49 @@ void LIS3DHTR<T>::setInterrupt(void)
 template <class T>
 void LIS3DHTR<T>::setDRDYInterrupt(void)
 {
-    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG3, 0x10); // Enable ZYXDA
+    // Write only as we wish to disable all other interrupts.
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG3, LIS3DHTR_CTRL_REG3_ZXYDA_ENABLE); // Enable ZYXDA
+}
+
+template <class T>
+void LIS3DHTR<T>::reset(void)
+{
+    // No point reading current register values as we are about to reset it to defaults anyway.
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, LIS3DHTR_REG_ACCEL_CTRL_REG5_REBOOT_ENABLE);
+}
+
+template <class T>
+void LIS3DHTR<T>::setupFIFOStream(const uint8_t highWatermark)
+{
+    // Enable the FIFO.
+    uint8_t reg5 = readRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5);
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, reg5 | LIS3DHTR_REG_ACCEL_CTRL_REG5_FIFO_ENABLE);
+
+    // Setup stream mode with the given high watermark.
+    writeRegister(
+        LIS3DHTR_REG_ACCEL_FIFO_CTRL,
+        LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_STREAM | LIS3DHTR_REG_ACCEL_FIFO_CTRL_TRIGGER_INT1 |
+            (highWatermark & LIS3DHTR_REG_ACCEL_FIFO_CTRL_WATERMARK_MASK));
+
+    // Set the interrupt to occur only on high watermark.
+    writeRegister(
+        LIS3DHTR_REG_ACCEL_CTRL_REG3,
+        LIS3DHTR_CTRL_REG3_CLICK_DISABLE | LIS3DHTR_CTRL_REG3_IA1_DISABLE |
+            LIS3DHTR_CTRL_REG3_IA2_DISABLE | LIS3DHTR_CTRL_REG3_ZXYDA_DISABLE |
+            LIS3DHTR_CTRL_REG3_321DA_DISABLE | LIS3DHTR_CTRL_REG3_WTM_ENABLE |
+            LIS3DHTR_CTRL_REG3_OVERRUN_DISABLE);
+}
+
+template <class T>
+void LIS3DHTR<T>::readFIFORaw(values_type_t *values, uint8_t valuesToRead)
+{
+    readRegisterRegion((uint8_t *)values, LIS3DHTR_REG_ACCEL_OUT_X_L, 6 * valuesToRead);
+}
+
+template <class T>
+uint8_t LIS3DHTR<T>::unreadFIFOSamples(void)
+{
+    return readRegister(LIS3DHTR_REG_ACCEL_FIFO_SRC) & LIS3DHTR_REG_ACCEL_FIFO_SRC_UNREAD_SAMPLES_MASK;
 }
 
 template <class T>
