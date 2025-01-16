@@ -444,7 +444,7 @@ public:
     /**
      * @brief Enables the data ready (DRDY) interrupt.
      *
-     * Interrupt 1 will go high when fresh data is available and low during reading.
+     * Interrupt 1 will go high when fresh data is available and low when it is read.
      *
      */
     void setDRDYInterrupt(void);

@@ -39,10 +39,12 @@ void loop()
    Serial.print("z:"); Serial.println(LIS.getAccelerationZ());
 
 }
-
 ```
 
+See the [examples folder](./examples/) for more information.
+
 ## API Reference
+See [`LIS3DHTR.h`](./src/LIS3DHTR.h) for more details.
 
 - **begin(*comm\<TwoWire\>, address\<uint8_t\>=0x18*) : void**
 ```C++
@@ -163,7 +165,24 @@ uint16_t adc3 = LIS.readbitADC3();
 // reset device
 LIS.reset();
 ```
+- **setDRDYInterrupt(*void*) : void**
+```C++
+// Enables the data ready (DRDY) interrupt.
+// Interrupt 1 will go high when fresh data is available and low when it is read.
+// Connect this pin to an interrupt capable pin on the microcontroller for maximum benefit.
+LIS.setDRDYInterrupt();
+attachInterrupt(digitalPinToInterrupt(INT1_PIN), isr, RISING);
 
+void isr()
+{
+  // Do something now data is available.
+}
+```
+
+## Using the FIFO buffer
+The LIS3DHTR accelerometer contains a 32 value First In Fist Out (FIFO) buffer that can be used to temporarily store samples. When using fast sampling rates or maximising microcontroller sleep time it is possible to use this buffer to store many samples and offload them in batches. This reduces the number of interrupts required and associated overheads compared to using `setDRDYInterrupt()` to create an interrupt for every single data point.
+
+To obtain maximum benefit from the buffer, connect the INT1 pin to an interrupt capable pin on the microcontroller. If using high frequency sampling, an SPI bus is preferred over I2C. See the [`LIS3DHTR_SPI_FIFO.ino`](./examples/LIS3DHTR_SPI_FIFO/LIS3DHTR_SPI_FIFO.ino) example for an implementation of this mode.
 
 ----
 ## License
