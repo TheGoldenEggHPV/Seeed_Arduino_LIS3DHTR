@@ -7,6 +7,10 @@
 #define PIN_LIS_CS 5    // 10 in other examples
 #define PIN_LIS_INT1 33 // Should be interrupt capable.
 
+#ifndef LED_BUILTIN
+    #define LED_BUILTIN 2 // In case LED_BUILTIN isn't defined.
+#endif
+
 // The number of readings to obtain before the interrupt is generated. Ideally set this low enough
 // that the buffer does not overflow between the interrupt occurring and data being read out.
 #define SAMPLES_PER_BATCH 25

@@ -487,6 +487,9 @@ void LIS3DHTR<T>::reset(void)
 {
     // No point reading current register values as we are about to reset it to defaults anyway.
     writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, LIS3DHTR_REG_ACCEL_CTRL_REG5_REBOOT_ENABLE);
+    delay(LIS3DHTR_CONVERSIONDELAY);
+    // Go back to a known useful state.
+    initRegisters();
 }
 
 template <class T>

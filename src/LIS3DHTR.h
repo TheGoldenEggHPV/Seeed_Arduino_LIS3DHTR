@@ -496,9 +496,8 @@ public:
     uint8_t getDeviceID(void);
 
     /**
-     * @brief Resets the registers back to their defaults on first boot.
-     *
-     * Note that the `begin()` method initialises them to something different than the default.
+     * @brief Resets the registers back to their defaults on first boot, followed by repeating the setup commands sent
+     * by this library.
      *
      */
     void reset(void);
