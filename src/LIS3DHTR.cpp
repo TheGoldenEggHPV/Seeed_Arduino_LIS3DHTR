@@ -35,7 +35,7 @@ LIS3DHTR<T>::LIS3DHTR()
 }
 
 template <class T>
-void LIS3DHTR<T>::begin(SPIClass &comm, uint8_t sspin)
+void LIS3DHTR<T>::begin(SPIClass &comm, uint8_t sspin, uint32_t freq)
 {
     chipSelectPin = sspin;
     _spi_com = &comm;
@@ -47,7 +47,9 @@ void LIS3DHTR<T>::begin(SPIClass &comm, uint8_t sspin)
     // Data is captured on rising edge of clock (CPHA = 0)
     // Base value of the clock is HIGH (CPOL = 1)
     // MODE3 for 328p operation
-    SPISettings _settings(10000000, MSBFIRST, SPI_MODE3);
+    _settings._clock = freq;
+    _settings._bitOrder = MSBFIRST;
+    _settings._dataMode = SPI_MODE3;
 
     // start the SPI library:
     _spi_com->begin();

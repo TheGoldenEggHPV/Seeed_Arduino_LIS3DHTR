@@ -332,8 +332,9 @@ public:
      *
      * @param comm the SPI bus to use.
      * @param sspin the chip select pin to use.
+     * @param freq the frequency to use (10MHz) is the rated speed in the datasheet.
      */
-    void begin(SPIClass &comm = SPI, uint8_t sspin = SS);
+    void begin(SPIClass &comm = SPI, uint8_t sspin = SS, uint32_t freq=10000000L);
 
     /**
      * @brief Initialises the accelerometer with an I2C connection.
