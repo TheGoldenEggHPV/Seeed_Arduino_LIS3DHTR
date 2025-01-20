@@ -334,7 +334,7 @@ public:
      * @param sspin the chip select pin to use.
      * @param freq the frequency to use (10MHz) is the rated speed in the datasheet.
      */
-    void begin(SPIClass &comm = SPI, uint8_t sspin = SS, uint32_t freq=10000000L);
+    void begin(SPIClass &comm = SPI, uint8_t sspin = SS, uint32_t freq = 10000000L);
 
     /**
      * @brief Initialises the accelerometer with an I2C connection.
@@ -506,6 +506,8 @@ public:
     /**
      * @brief Instructs the accelerometer to use its internal FIFO queue in stream mode.
      *
+     * This function enables an interrupt on pin 1 when a configurable high watermark is reached.
+     *
      * In stream mode, new values are placed on the end of the 32 level queue. When a given number
      * of values have been accrued (the high watermark + 1), an interrupt on pin 1 will be created.
      * This signals to the microcontroller that it can access data as a batch.
@@ -519,10 +521,30 @@ public:
      *                      will occur. When the number of samples drops to less than or equal this
      *                      value due to data being read, the interrupt will be cleared.
      */
-    void setupFIFOStream(const uint8_t highWatermark);
+    void setupFIFOStreamHWM(const uint8_t highWatermark);
+
+    /**
+     * @brief Instructs the accelerometer to use its internal FIFO queue in stream mode.
+     *
+     * This function enables an interrupt on pin 1 when an overrun is detected.
+     *
+     * In stream mode, new values are placed on the end of the 32 level queue. When a given number
+     * of values have been accrued (the high watermark + 1), an interrupt on pin 1 will be created.
+     * This signals to the microcontroller that it can access data as a batch.
+     *
+     * One application of stream mode is high frequency sampling and removing the need for an
+     * interrupt every single sample.
+     *
+     * See section "5.1.3 Stream mode" in the manual for more details.
+     */
+    void setupFIFOStreamOVRN();
 
     /**
      * @brief Reads raw data from the FIFO buffer.
+     *
+     * Note: On ESP32 series microcontrollers, do not call this method from an interrupt service
+     * routine (ISR) as it calls `SPI.beginTransaction()` which attempts to use non-interrupt safe
+     * mutex calls.
      *
      * @param values array of structs to place the records in.
      * @param valuesToRead the number of records (X, Y and Z tuples) to read. Make sure this is the
@@ -535,6 +557,45 @@ public:
      */
     uint8_t unreadFIFOSamples(void);
 
+#ifdef ARDUINO_ARCH_ESP32 // Currently ESP32 series only
+    /**
+     * @brief Starts reading into the SPI DMA buffer (ESP32 series, SPI only).
+     *
+     * The ESP32 series of microcontrollers feature direct memory access (DMA) capabilities that
+     * allows the SPI bus to read and write to / from an area of memory without requiring cpu time
+     * during this process. This allows the processor to work on other tasks whilst waiting for a
+     * transaction to complete. Platform-specific implementations will need to be completed for
+     * other architectures. The ESP32 implementation is based off the `__spiTransferBytes` method
+     * in `esp32-hal-spi.c` and mainly tested with an original ESP32.
+     *
+     * This method can safely be called in an ISR. Make sure that nothing else is using the bus
+     * using `dmaFinished()` before calling as crashes and other issues may otherwise result.
+     *
+     * @param valuesToRead the number of samples to read from the accelerometer. This is limited to
+     *                     a maximum of 10 by the size of the DMA buffer.
+     */
+    void startFIFORawDMA(const uint8_t valuesToRead);
+
+    /**
+     * @brief Checks if anything is currently using the SPI bus.
+     *
+     * @return true if the bus is currently idle, indicating that DMA has finished.
+     * @return false is something else is using the bus or DMA is ongoing.
+     */
+    bool dmaFinished();
+
+    /**
+     * @brief Waits until the DMA transaction is finished and copies the returned values.
+     *
+     * @param values the buffer to store the values from the accelerometer into.
+     * @param valuesToRead the number of values to read from the DMA buffer. This should be <= the
+     *                     number given to `startFIFORawDMA()` and <= the length of `values`.
+     */
+    void finishFIFORawDMA(values_type_t *values, uint8_t valuesToRead);
+#endif
+    /**
+     * @brief Shortcut for calling `isConnected()`.
+     */
     operator bool();
 
 private:

@@ -87,7 +87,7 @@ void setup()
     // Set the accelerometer to use stream mode. Stream mode overwrites the oldest data when the
     // queue becomes full, whereas the other FIFO modes have different behaviours.
     attachInterrupt(digitalPinToInterrupt(PIN_LIS_INT1), lisISR, RISING);
-    LIS.setupFIFOStream(SAMPLES_PER_BATCH - 1);
+    LIS.setupFIFOStreamHWM(SAMPLES_PER_BATCH - 1);
 }
 
 void loop()
