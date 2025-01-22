@@ -557,6 +557,16 @@ public:
      */
     uint8_t unreadFIFOSamples(void);
 
+    /**
+     * @brief Continuously reads until the FIFO is empty.
+     * 
+     * This requires that the accelerometer already be in FIFO mode. This method is useful for
+     * recovering from instances where the buffer is already full and thus no rising interrupts are
+     * generated.
+     * 
+     */
+    void clearFIFO(void);
+
 #ifdef ARDUINO_ARCH_ESP32 // Currently ESP32 series only
     /**
      * @brief Starts reading into the SPI DMA buffer (ESP32 series, SPI only).

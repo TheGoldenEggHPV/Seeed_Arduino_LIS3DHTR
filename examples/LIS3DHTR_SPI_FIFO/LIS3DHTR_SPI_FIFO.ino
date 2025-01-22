@@ -5,7 +5,7 @@
 
 // Pin definitions. Change these to suit your microcontroller and wiring.
 #define PIN_LIS_CS 5    // 10 in other examples
-#define PIN_LIS_INT1 33 // Should be interrupt capable.
+#define PIN_LIS_INT1 27 // Should be interrupt capable.
 
 #ifndef LED_BUILTIN
     #define LED_BUILTIN 2 // In case LED_BUILTIN isn't defined.
@@ -88,6 +88,7 @@ void setup()
     // queue becomes full, whereas the other FIFO modes have different behaviours.
     attachInterrupt(digitalPinToInterrupt(PIN_LIS_INT1), lisISR, RISING);
     LIS.setupFIFOStreamHWM(SAMPLES_PER_BATCH - 1);
+    LIS.clearFIFO();
 }
 
 void loop()

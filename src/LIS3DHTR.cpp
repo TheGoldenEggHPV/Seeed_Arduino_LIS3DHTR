@@ -65,9 +65,7 @@ void LIS3DHTR<T>::begin(SPIClass &comm, uint8_t sspin, uint32_t freq)
     // Data is captured on rising edge of clock (CPHA = 0)
     // Base value of the clock is HIGH (CPOL = 1)
     // MODE3 for 328p operation
-    _settings._clock = freq;
-    _settings._bitOrder = MSBFIRST;
-    _settings._dataMode = SPI_MODE3;
+    _settings = SPISettings(freq, MSBFIRST, SPI_MODE3);
 
     // start the SPI library:
     _spi_com->begin();
@@ -570,6 +568,16 @@ uint8_t LIS3DHTR<T>::unreadFIFOSamples(void)
     return readRegister(LIS3DHTR_REG_ACCEL_FIFO_SRC) & LIS3DHTR_REG_ACCEL_FIFO_SRC_UNREAD_SAMPLES_MASK;
 }
 
+template <class T>
+void LIS3DHTR<T>::clearFIFO(void)
+{
+    while (unreadFIFOSamples())
+    {
+        values_type_t values;
+        getAccelerationRaw(values);
+    }
+}
+
 #ifdef ARDUINO_ARCH_ESP32
 template <class T>
 void LIS3DHTR<T>::startFIFORawDMA(const uint8_t valuesToRead)
@@ -586,7 +594,7 @@ void LIS3DHTR<T>::startFIFORawDMA(const uint8_t valuesToRead)
         spi->dev->mosi_dlen.usr_mosi_dbitlen = bits; // Only wish to write 7+1 bits for the address.
         spi->dev->miso_dlen.usr_miso_dbitlen = bits; // Number of bits to read.
 
-        // Set the register to write.
+        // Set the register to write. Junk that is already in the buffer (probably the last readings) will be sent as well, but this will be ignored by the accelerometer.
         const uint8_t writeAddress = LIS3DHTR_REG_ACCEL_OUT_X_L | 0x80 | 0x40; // Ored with "read request" bit and "auto increment" bit
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
         spi->dev->data_buf[0].val = writeAddress;
@@ -623,8 +631,8 @@ void LIS3DHTR<T>::finishFIFORawDMA(values_type_t *values, uint8_t valuesToRead)
     {
         valuesToRead = 16;
     }
-    uint32_t buf[16];
-    for (uint32_t i = 0; i < valuesToRead; i++)
+    uint32_t buf[16]; // Same size as DMA buffer.
+    for (uint32_t i = 0; i < 16; i++)
     {
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
         buf[i] = spi->dev->data_buf[i].val; // copy spi fifo to buffer
@@ -632,9 +640,8 @@ void LIS3DHTR<T>::finishFIFORawDMA(values_type_t *values, uint8_t valuesToRead)
         buf[i] = spi->dev->data_buf[i]; // copy spi fifo to buffer
 #endif
     }
-
     // Copy into the main buffer now we don't have issues with arrays of structs.
-    memcpy(values, buf + 1, 6 * valuesToRead);
+    memcpy(values, (((uint8_t *)buf) + 1), 6 * valuesToRead);
 
     // Tidy up
     digitalWrite(chipSelectPin, HIGH);
