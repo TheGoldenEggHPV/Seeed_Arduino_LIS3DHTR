@@ -558,14 +558,10 @@ public:
     uint8_t unreadFIFOSamples(void);
 
     /**
-     * @brief Continuously reads until the FIFO is empty.
-     * 
-     * This requires that the accelerometer already be in FIFO mode. This method is useful for
-     * recovering from instances where the buffer is already full and thus no rising interrupts are
-     * generated.
+     * @brief Puts the FIFO buffer into bypass mode, clearing its contents. This is required when switching between FIFO modes.
      * 
      */
-    void clearFIFO(void);
+    void setFIFOBypass(void);
 
 #ifdef ARDUINO_ARCH_ESP32 // Currently ESP32 series only
     /**

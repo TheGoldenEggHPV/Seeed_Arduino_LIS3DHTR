@@ -569,13 +569,16 @@ uint8_t LIS3DHTR<T>::unreadFIFOSamples(void)
 }
 
 template <class T>
-void LIS3DHTR<T>::clearFIFO(void)
+void LIS3DHTR<T>::setFIFOBypass(void)
 {
-    while (unreadFIFOSamples())
-    {
-        values_type_t values;
-        getAccelerationRaw(values);
-    }
+    // Enable the FIFO.
+    uint8_t reg5 = readRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5);
+    writeRegister(LIS3DHTR_REG_ACCEL_CTRL_REG5, reg5 | LIS3DHTR_REG_ACCEL_CTRL_REG5_FIFO_ENABLE);
+
+    // Setup stream mode
+    writeRegister(
+        LIS3DHTR_REG_ACCEL_FIFO_CTRL,
+        LIS3DHTR_REG_ACCEL_FIFO_CTRL_MODE_BYPASS);
 }
 
 #ifdef ARDUINO_ARCH_ESP32
